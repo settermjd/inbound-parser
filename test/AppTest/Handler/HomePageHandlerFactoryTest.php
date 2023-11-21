@@ -9,6 +9,7 @@ use App\Handler\HomePageHandlerFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 
 class HomePageHandlerFactoryTest extends TestCase
 {
@@ -21,6 +22,14 @@ class HomePageHandlerFactoryTest extends TestCase
 
     public function testFactoryWithoutTemplate(): void
     {
+        $logger = $this->createMock(LoggerInterface::class);
+
+        $this->container
+            ->expects($this->once())
+            ->method('get')
+            ->with(LoggerInterface::class)
+            ->willReturn($logger);
+
         $factory  = new HomePageHandlerFactory();
         $homePage = $factory($this->container);
 
