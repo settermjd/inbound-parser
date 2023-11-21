@@ -44,12 +44,14 @@
         "laminas/laminas-component-installer": "^2.6 || ^3.0",
         "laminas/laminas-config-aggregator": "^1.6",
         "laminas/laminas-diactoros": "^2.24.2",
+        "laminas/laminas-mail": "^2.25",
+        "laminas/laminas-servicemanager": "^3.4",
         "laminas/laminas-stdlib": "^3.6",
         "mezzio/mezzio": "^3.7",
-        "mezzio/mezzio-helpers": "^5.7",
-        "laminas/laminas-servicemanager": "^3.4",
         "mezzio/mezzio-fastroute": "^3.0.3",
-        "mezzio/mezzio-twigrenderer": "^2.6"
+        "mezzio/mezzio-helpers": "^5.7",
+        "mezzio/mezzio-twigrenderer": "^2.6",
+        "monolog/monolog": "^3.5"
     },
     "require-dev": {
         "laminas/laminas-development-mode": "^3.3.0",
