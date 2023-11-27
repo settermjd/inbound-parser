@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App;
 
+use App\Repository\NoteRepository;
+use App\Repository\NoteRepositoryFactory;
+use App\Repository\UserRepository;
+use App\Repository\UserRepositoryFactory;
 use App\Service\MonologServiceFactory;
 use Psr\Log\LoggerInterface;
 
@@ -39,6 +43,8 @@ class ConfigProvider
             ],
             'factories'  => [
                 Handler\HomePageHandler::class => Handler\HomePageHandlerFactory::class,
+                NoteRepository::class => NoteRepositoryFactory::class,
+                UserRepository::class => UserRepositoryFactory::class,
                 LoggerInterface::class => MonologServiceFactory::class,
             ],
         ];
