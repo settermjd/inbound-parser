@@ -43,6 +43,7 @@
         "php": "~8.1.0 || ~8.2.0",
         "composer/package-versions-deprecated": "^1.10.99",
         "doctrine/cache": "^2.2",
+        "juststeveking/http-status-code": "dev-master",
         "laminas/laminas-component-installer": "^2.6 || ^3.0",
         "laminas/laminas-config-aggregator": "^1.6",
         "laminas/laminas-diactoros": "^2.24.2",

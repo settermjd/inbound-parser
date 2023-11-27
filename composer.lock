@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a909b0ea2e571b22913bd19df3be0156",
+    "content-hash": "9ff571791045d323698fca05893e8280",
     "packages": [
         {
             "name": "brick/varexporter",
@@ -1254,6 +1254,60 @@
             "time": "2020-11-24T22:02:12+00:00"
         },
         {
+            "name": "juststeveking/http-status-code",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/JustSteveKing/http-status-code.git",
+                "reference": "1e14f1817f84b2df072359007d0e1b2989fc5ae9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/JustSteveKing/http-status-code/zipball/1e14f1817f84b2df072359007d0e1b2989fc5ae9",
+                "reference": "1e14f1817f84b2df072359007d0e1b2989fc5ae9",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "laravel/pint": "^0.2.3",
+                "phpunit/phpunit": "^9.5.4",
+                "thecodingmachine/phpstan-safe-rule": "^1.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "JustSteveKing\\StatusCode\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Steve McDougall",
+                    "email": "juststevemcd@gmail.com",
+                    "homepage": "https://www.juststeveking.uk",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A simple class to return correct status codes for http responses",
+            "support": {
+                "issues": "https://github.com/JustSteveKing/http-status-code/issues",
+                "source": "https://github.com/JustSteveKing/http-status-code/tree/3.0.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/JustSteveKing",
+                    "type": "github"
+                }
+            ],
+            "time": "2022-10-17T19:47:50+00:00"
+        },
+        {
             "name": "laminas/laminas-cli",
             "version": "1.10.x-dev",
             "source": {
@@ -2121,12 +2175,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/laminas/laminas-validator.git",
-                "reference": "39be29b3d8920cb5a0f15998471283d228bf2e23"
+                "reference": "13d1e27e474b48365c54aa370a02b17a7891b766"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laminas/laminas-validator/zipball/39be29b3d8920cb5a0f15998471283d228bf2e23",
-                "reference": "39be29b3d8920cb5a0f15998471283d228bf2e23",
+                "url": "https://api.github.com/repos/laminas/laminas-validator/zipball/13d1e27e474b48365c54aa370a02b17a7891b766",
+                "reference": "13d1e27e474b48365c54aa370a02b17a7891b766",
                 "shasum": ""
             },
             "require": {
@@ -2198,7 +2252,7 @@
                     "type": "community_bridge"
                 }
             ],
-            "time": "2023-11-20T01:23:37+00:00"
+            "time": "2023-11-27T09:37:13+00:00"
         },
         {
             "name": "mezzio/mezzio",
@@ -5300,12 +5354,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
-                "reference": "8a0594028f23e82f11083a4c1aafd7b2dcb8f5dc"
+                "reference": "ce38eacbf713811e349b59a3a95e15d194c2f76f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/8a0594028f23e82f11083a4c1aafd7b2dcb8f5dc",
-                "reference": "8a0594028f23e82f11083a4c1aafd7b2dcb8f5dc",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/ce38eacbf713811e349b59a3a95e15d194c2f76f",
+                "reference": "ce38eacbf713811e349b59a3a95e15d194c2f76f",
                 "shasum": ""
             },
             "require": {
@@ -5370,7 +5424,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-11-23T06:24:18+00:00"
+            "time": "2023-11-27T14:34:10+00:00"
         },
         {
             "name": "phpunit/php-file-iterator",
@@ -5619,12 +5673,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "5dafcd8dd0f39f3fa2141f732de9810f73d20a17"
+                "reference": "32d29203d93abfd65dabb1447794becf977f80f0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/5dafcd8dd0f39f3fa2141f732de9810f73d20a17",
-                "reference": "5dafcd8dd0f39f3fa2141f732de9810f73d20a17",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/32d29203d93abfd65dabb1447794becf977f80f0",
+                "reference": "32d29203d93abfd65dabb1447794becf977f80f0",
                 "shasum": ""
             },
             "require": {
@@ -5714,7 +5768,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-11-23T06:27:00+00:00"
+            "time": "2023-11-27T17:13:58+00:00"
         },
         {
             "name": "roave/security-advisories",
@@ -7498,6 +7552,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "juststeveking/http-status-code": 20,
         "skar/laminas-doctrine-orm": 20,
         "roave/security-advisories": 20
     },
