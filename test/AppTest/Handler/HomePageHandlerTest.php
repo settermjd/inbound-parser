@@ -4,8 +4,18 @@ declare(strict_types=1);
 
 namespace AppTest\Handler;
 
+use App\Entity\Attachment;
+use App\Entity\Image;
+use App\Entity\Note;
+use App\Entity\User;
 use App\Handler\HomePageHandler;
+use App\Repository\UserRepository;
+use App\Service\EmailParserService;
+use App\Service\UserService;
+use Doctrine\ORM\EntityManager;
+use JustSteveKing\StatusCode\Http;
 use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\Mail\Message;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -15,54 +25,113 @@ use Psr\Log\LoggerInterface;
 class HomePageHandlerTest extends TestCase
 {
     protected MockObject|ContainerInterface $container;
+    private EntityManager|MockObject $entityManager;
 
     protected function setUp(): void
     {
-        $this->container = $this->createMock(
-            ContainerInterface::class
+        $this->container = $this->createMock(ContainerInterface::class);
+        $this->entityManager = $this->createMock(EntityManager::class);
+    }
+
+    public static function invalidSubjectLineProvider(): array
+    {
+        return [
+            [
+                ['subject' => 'Refd ID: 123AQPOIU98765'],
+            ],
+            [
+                ['subject' => ''],
+            ],
+            [[]],
+        ];
+    }
+
+    /**
+     * @dataProvider invalidSubjectLineProvider
+     */
+    public function testHandlesIncorrectSubjectLines(array $postData): void
+    {
+        $homePage = new HomePageHandler(
+            $this->entityManager,
+            new EmailParserService(),
+            $this->createMock(UserService::class),
+            $this->createMock(LoggerInterface::class)
+        );
+        $request = $this->createMock(
+            ServerRequestInterface::class
+        );
+        $request
+            ->expects($this->once())
+            ->method('getParsedBody')
+            ->willReturn($postData);
+
+        $response = $homePage->handle($request);
+        $this->assertSame(
+            Http::UNPROCESSABLE_ENTITY->value,
+            $response->getStatusCode()
+        );
+        $responseBody = file_get_contents(__DIR__ . '/../../_files/invalid-subject-response-body.json');
+
+        $this->assertSame(
+            $responseBody,
+            $response->getBody()->getContents()
         );
     }
 
     public function testHandlesValidRequest(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
+
+        $email = file_get_contents(
+            __DIR__ . '/../../_files/mail_with_pdf_attachment.eml'
+        );
+        $pdf = file_get_contents(__DIR__ . '/../../_files/test.pdf');
+
+        $responseBody = file_get_contents(__DIR__ . '/../../_files/successful-note-creation-response-body.json');
+
+        $requestData = [
+            "charsets" => '{\"to\":\"UTF-8\",\"from\":\"UTF-8\",\"subject\":\"UTF-8\"}',
+            "SPF" => "pass",
+            "from" => "Example Sender <sender@example.net>",
+            "subject" => "Reference ID: 123AQPOIU98765",
+            "envelope" => '{"to":["inbound@example.org"],"from":"sender@example.net"}',
+            "email" => $email,
+            "dkim" => "{@twilio.com : pass}",
+            "sender_ip" => "148.163.153.13",
+            "to" => "inbound@example.org",
+            "spam_score" => "-0.1",
+            "spam_report" => "Spam detection software, running on the system \"parsley-p1las1-spamassassin-65fbf9c65-95hhl\",\nhas NOT identified this incoming email as spam.  The original\nmessage has been attached to this so you can view it or label\nsimilar future email.  If you have any questions, see\nthe administrator of that system for details.\n\nContent preview:  ￼ Here’s the attachment. Best, \n\nContent analysis details:   (-0.1 points, 5.0 required)\n\n pts rule name              description\n---- ---------------------- --------------------------------------------------\n 0.0 URIBL_BLOCKED          ADMINISTRATOR NOTICE: The query to URIBL was\n 0.0 URIBL_ZEN_BLOCKED      ADMINISTRATOR NOTICE: The query to\n 0.0 RCVD_IN_ZEN_BLOCKED    RBL: ADMINISTRATOR NOTICE: The query to\n 0.0 HTML_MESSAGE           BODY: HTML included in message\n-0.1 DKIM_VALID             Message has at least one valid DKIM or DK signature\n-0.1 DKIM_VALID_AU          Message has a valid DKIM or DK signature from\n 0.1 DKIM_SIGNED            Message has a DKIM or DK signature, not necessarily\n-0.0 DKIMWL_WL_HIGH         DKIMwl.org - High trust sender\n"
+        ];
+
         $logger
             ->expects($this->once())
             ->method('info')
             ->with(
                 'Inbound parsed data from SendGrid',
                 [
-                    'subject' => 'test',
-                    'spam_score' => '-0.1',
-                    'envelope' => '{\"to\":[\"inbound@parse.thebratwurstkangaroo.com\"],\"from\":\"msetter@twilio.com\"}',
-                    'to' => 'inbound@parse.thebratwurstkangaroo.com',
-                    'email' => [
-                        'parts' => [
-                            [
-                                'Content-Type' => 'application/pdf',
-                                'Name' => 'test document.pdf',
-                                'Size' => '8027',
-                            ]
-                        ]
-                    ],
+                    'subject' =>"Reference ID: 123AQPOIU98765",
+                    "spam_score" => "-0.1",
+                    "envelope" => '{"to":["inbound@example.org"],"from":"sender@example.net"}',
+                    'email' => $email,
                 ]
             );
 
-        $requestData = [
-            "charsets" => '{\"to\":\"UTF-8\",\"from\":\"UTF-8\",\"subject\":\"UTF-8\"}',
-            "SPF" => "pass",
-            "from" => "Matthew Setter <msetter@twilio.com>",
-            "subject" => "test",
-            "envelope" => '{"to":["inbound@parse.thebratwurstkangaroo.com"],"from":"msetter@twilio.com"}',
-            "email" => "Received: from mx0b-0023de01.pphosted.com (mxd [148.163.153.13]) by mx.sendgrid.net with ESMTP id NJK4kAz-R7mY9fpT_36Cvg for <inbound@parse.thebratwurstkangaroo.com>; Wed, 15 Nov 2023 23:58:38.118 +0000 (UTC)\r\nReceived: from pps.filterd (m0198306.ppops.net [127.0.0.1])\r\n\tby mx0b-0023de01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 3AFL8KUM012913\r\n\tfor <inbound@parse.thebratwurstkangaroo.com>; Wed, 15 Nov 2023 15:58:37 -0800\r\nReceived: from mail-pl1-f199.google.com (mail-pl1-f199.google.com [209.85.214.199])\r\n\tby mx0b-0023de01.pphosted.com (PPS) with ESMTPS id 3ucjbkvcg7-1\r\n\t(version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)\r\n\tfor <inbound@parse.thebratwurstkangaroo.com>; Wed, 15 Nov 2023 15:58:36 -0800\r\nReceived: by mail-pl1-f199.google.com with SMTP id d9443c01a7336-1cc2be064b8so2136265ad.1\r\n        for <inbound@parse.thebratwurstkangaroo.com>; Wed, 15 Nov 2023 15:58:36 -0800 (PST)\r\nDKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=twilio.com; s=google1024; t=1700092715; x=1700697515; darn=parse.thebratwurstkangaroo.com;\r\n        h=to:date:message-id:subject:mime-version:from:from:to:cc:subject\r\n         :date:message-id:reply-to;\r\n        bh=0Ub0x+zRotYc5PBP+tq3JbW/kYUGrbeTTc92O4b6HOk=;\r\n        b=c3tRtNIx5DrJfNzTtayYY5FkdCqhK7bBJTRjFmqTbvW1q3khwVVgEJDzIPsGrs3NAl\r\n         BFrMJ59tk0T8Kz5qTiEqUTuvK/0e2O5tzf6Gp5IVWXVF4sUT5m39E2wuHYn2w7OXOlup\r\n         oyFeyr7kCDqxhbh0eXx2S45ZmlGrb5Voa8o9o=\r\nX-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=1e100.net; s=20230601; t=1700092715; x=1700697515;\r\n        h=to:date:message-id:subject:mime-version:from:x-gm-message-state\r\n         :from:to:cc:subject:date:message-id:reply-to;\r\n        bh=0Ub0x+zRotYc5PBP+tq3JbW/kYUGrbeTTc92O4b6HOk=;\r\n        b=KqXuwYglafpnIHg7iXVNOL5b6+jkuW0HsHvVEJYXaCyeK9R/bn4FFt/4lvhjrAosnS\r\n         Uoh1P0YiAoKHj4iGKXohvKWOTAfEbkKV4CSpGGM4QwBHy8gy8iEWCRXFNEAcve0ggS61\r\n         Lba8jc+ZmHKEV9lcKruUq7PPKI63SFZbHnp8nLfjeAiTUj9RJWvnVc/2P/A3sw6voQUS\r\n         h/lkol1qWClPgtza1ewxdPeZI6xzDZ0dAjvOIR3p52JkZy2GSr+OEIRelcN09dYuaNIX\r\n         dUu00zLNRZNTU47yj+DAsCg85a46i9dDpIdYZI4RX5pXED6qGAEnkiNacBrUEIvMhkJr\r\n         7Qgw==\r\nX-Gm-Message-State: AOJu0Ywi2Hn4jKS3T2wbyTtSM/733h3dhxgJRcqSSTIj1jOHiQKBPDN/\r\n\t/Rl/cKHE2GwwPymHrOmY2CfrOXbbl3apawQoonHdSXS5tjD/ZJi5J/JCoSB/PuGoJB2P4WC1Ju+\r\n\tgvzFudiVq8UcqF0O0WKLYPkbMk/DiYkiG1LU1FQLMr0HE\r\nX-Received: by 2002:a17:902:db03:b0:1cc:4fe8:c6c6 with SMTP id m3-20020a170902db0300b001cc4fe8c6c6mr110023plx.6.1700092715179;\r\n        Wed, 15 Nov 2023 15:58:35 -0800 (PST)\r\nX-Google-Smtp-Source: AGHT+IHHv6tsP20Y5tnyHu5YkrC44/caSKm/rRXlGiQ7KKat3ZMtZ2VY1bUKpfK45xDUbaAGQn++gQ==\r\nX-Received: by 2002:a17:902:db03:b0:1cc:4fe8:c6c6 with SMTP id m3-20020a170902db0300b001cc4fe8c6c6mr109997plx.6.1700092714597;\r\n        Wed, 15 Nov 2023 15:58:34 -0800 (PST)\r\nReceived: from smtpclient.apple (87-121-74-88.dyn.launtel.net.au. [87.121.74.88])\r\n        by smtp.gmail.com with ESMTPSA id l7-20020a170903120700b001c73701bd17sm7931667plh.4.2023.11.15.15.58.32\r\n        for <inbound@parse.thebratwurstkangaroo.com>\r\n        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);\r\n        Wed, 15 Nov 2023 15:58:34 -0800 (PST)\r\nFrom: Matthew Setter <msetter@twilio.com>\r\nContent-Type: multipart/alternative;\r\n\tboundary=\"Apple-Mail=_3D975E51-75F6-45A6-ABBA-CA35202CF09A\"\r\nMime-Version: 1.0 (Mac OS X Mail 16.0 \\(3731.700.6\\))\r\nSubject: Test with attachment\r\nMessage-Id: <505B01FE-2AA9-4A78-9225-D788C8D81868@twilio.com>\r\nDate: Thu, 16 Nov 2023 09:58:20 +1000\r\nTo: inbound@parse.thebratwurstkangaroo.com\r\nX-Mailer: Apple Mail (2.3731.700.6)\r\nX-Proofpoint-GUID: ELOoDjNgsm9gUWG96r771rug2cDvbJZx\r\nX-Proofpoint-ORIG-GUID: ELOoDjNgsm9gUWG96r771rug2cDvbJZx\r\nX-Proofpoint-Virus-Version: vendor=baseguard\r\n engine=ICAP:2.0.272,Aquarius:18.0.987,Hydra:6.0.619,FMLib:17.11.176.26\r\n definitions=2023-11-15_20,2023-11-15_01,2023-05-22_02\r\nX-Proofpoint-Spam-Reason: orgsafe\r\n\r\n\r\n--Apple-Mail=_3D975E51-75F6-45A6-ABBA-CA35202CF09A\r\nContent-Transfer-Encoding: quoted-printable\r\nContent-Type: text/plain;\r\n\tcharset=utf-8\r\n\r\n=EF=BF=BC\r\n\r\nHere=E2=80=99s the attachment.\r\n\r\nBest,\r\n\r\nMatthew\r\nlinkedin.com/in/MatthewSetter <https://linkedin.com/in/MatthewSetter> // =\r\n@settermjd <https://twitter.com/settermjd>\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n--Apple-Mail=_3D975E51-75F6-45A6-ABBA-CA35202CF09A\r\nContent-Type: multipart/mixed;\r\n\tboundary=\"Apple-Mail=_B798A485-1F87-4E12-AED6-53086687FAB1\"\r\n\r\n\r\n--Apple-Mail=_B798A485-1F87-4E12-AED6-53086687FAB1\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/html;\r\n\tcharset=us-ascii\r\n\r\n<html><head><meta http-equiv=\"content-type\" content=\"text/html; charset=us-ascii\"></head><body style=\"overflow-wrap: break-word; -webkit-nbsp-mode: space; line-break: after-white-space;\"><div></div></body></html>\r\n--Apple-Mail=_B798A485-1F87-4E12-AED6-53086687FAB1\r\nContent-Disposition: inline;\r\n\tfilename=\"test document.pdf\"\r\nContent-Type: application/pdf;\r\n\tx-mac-hide-extension=yes;\r\n\tx-unix-mode=0644;\r\n\tname=\"test document.pdf\"\r\nContent-Transfer-Encoding: base64\r\n\r\nJVBERi0xLjMKJcTl8uXrp/Og0MTGCjMgMCBvYmoKPDwgL0ZpbHRlciAvRmxhdGVEZWNvZGUgL0xl\r\nbmd0aCAyMDkgPj4Kc3RyZWFtCngBXY/NasNADITvfoo5JofKK3vXK0HIIU6gLQRaWOih9FBchwTi\r\nFMfJ+1fOD6VFB2lgRvrU4xU9nFXQQIVAPJMoji3ecEBeD4xmAF9qaMx3M3QWqO5iP4rswRE7VQke\r\nezP+kVtskL9gNkO+rp+Wtm4+x2JZX86HkrwoK0JFlRZawItQ6TgilkzRRc3+AY3EDgbU26px5N9w\r\njIHEi4F3WCTwzXBtqcvylMZ/0gbvmDy2xylYMGmxG/CJr+/m3LWHE03xgfSMVTLE1dpAfwDXhkJi\r\nCmVuZHN0cmVhbQplbmRvYmoKMSAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9S\r\nZXNvdXJjZXMgNCAwIFIgL0NvbnRlbnRzIDMgMCBSIC9NZWRpYUJveCBbMCAwIDU5NS4yOCA4NDEu\r\nODldCj4+CmVuZG9iago0IDAgb2JqCjw8IC9Qcm9jU2V0IFsgL1BERiAvVGV4dCBdIC9Db2xvclNw\r\nYWNlIDw8IC9DczEgNSAwIFIgPj4gL0ZvbnQgPDwgL1RUMSA2IDAgUgo+PiA+PgplbmRvYmoKOCAw\r\nIG9iago8PCAvTiAzIC9BbHRlcm5hdGUgL0RldmljZVJHQiAvTGVuZ3RoIDI2MTIgL0ZpbHRlciAv\r\nRmxhdGVEZWNvZGUgPj4Kc3RyZWFtCngBnZZ3VFPZFofPvTe90BIiICX0GnoJINI7SBUEUYlJgFAC\r\nhoQmdkQFRhQRKVZkVMABR4ciY0UUC4OCYtcJ8hBQxsFRREXl3YxrCe+tNfPemv3HWd/Z57fX2Wfv\r\nfde6AFD8ggTCdFgBgDShWBTu68FcEhPLxPcCGBABDlgBwOFmZgRH+EQC1Py9PZmZqEjGs/buLoBk\r\nu9ssv1Amc9b/f5EiN0MkBgAKRdU2PH4mF+UClFOzxRky/wTK9JUpMoYxMhahCaKsIuPEr2z2p+Yr\r\nu8mYlybkoRpZzhm8NJ6Mu1DemiXho4wEoVyYJeBno3wHZb1USZoA5fco09P4nEwAMBSZX8znJqFs\r\niTJFFBnuifICAAiUxDm8cg6L+TlongB4pmfkigSJSWKmEdeYaeXoyGb68bNT+WIxK5TDTeGIeEzP\r\n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\r\n8qLyt7tX7L5WYVtxYA9pj2SPtDKosr1Kr2pH1afqpOqBGo+a5r3qe7ftndrH29e/321/0wGNA8UH\r\nPh4UHLx/yPdQa61BbcVh3OGsw8/rouq6v2d/X39E7Ujxkc9HhUelx8KPddU71Nc3qDeUNsKNksax\r\n43HHb/3g9UN7E6vpUDOjufgEOCE58eLH+B/vngw82XmKfarpJ/2f9rbQWopaodbc1om2pDZpe0x7\r\n3+mA050dzh0tP5v/fPSM9pmas8pnS8+RzhWcmzmfd37yQsaF8YuJF4c6V3Q+urTk0p2usK7ey4GX\r\nr17xuXKp2737/FWXq2euOV07fZ19ve2G/Y3WHruell/sfmnpte9tvelws/2W462OvgV95/pd+y/e\r\n9rp95Y7/nRsDiwb67i6+e/9e3D3pfd790QepD14/zHo4/Wj9Y+zjoicKTyqeqj+t/dX412apvfTs\r\noNdgz7OIZ4+GuEMv/5X5r0/DBc+pzytGtEbqR61Hz4z5jN16sfTF8MuMl9Pjhb8p/rb3ldGrn353\r\n+71nYsnE8GvR65k/St6ovjn61vZt52To5NN3ae+mp4req74/9oH9oftj9MeR6exP+E+Vn40/d3wJ\r\n/PJ4Jm1m5t/3hPP7CmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iagpbIC9JQ0NCYXNlZCA4IDAgUiBd\r\nCmVuZG9iagoxMCAwIG9iago8PCAvVHlwZSAvU3RydWN0VHJlZVJvb3QgL0sgOSAwIFIgPj4KZW5k\r\nb2JqCjkgMCBvYmoKPDwgL1R5cGUgL1N0cnVjdEVsZW0gL1MgL0RvY3VtZW50IC9QIDEwIDAgUiAv\r\nSyBbIDExIDAgUiBdICA+PgplbmRvYmoKMTEgMCBvYmoKPDwgL1R5cGUgL1N0cnVjdEVsZW0gL1Mg\r\nL1AgL1AgOSAwIFIgL1BnIDEgMCBSIC9LIDEgID4+CmVuZG9iagoyIDAgb2JqCjw8IC9UeXBlIC9Q\r\nYWdlcyAvTWVkaWFCb3ggWzAgMCA1OTUuMjggODQxLjg5XSAvQ291bnQgMSAvS2lkcyBbIDEgMCBS\r\nIF0gPj4KZW5kb2JqCjEyIDAgb2JqCjw8IC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUiAvTWFy\r\na0luZm8gPDwgL01hcmtlZCB0cnVlID4+IC9TdHJ1Y3RUcmVlUm9vdAoxMCAwIFIgPj4KZW5kb2Jq\r\nCjcgMCBvYmoKWyAxIDAgUiAgL1hZWiAwIDg0MS44OSAwIF0KZW5kb2JqCjYgMCBvYmoKPDwgL1R5\r\ncGUgL0ZvbnQgL1N1YnR5cGUgL1RydWVUeXBlIC9CYXNlRm9udCAvQUFBQUFCK0hlbHZldGljYU5l\r\ndWUgL0ZvbnREZXNjcmlwdG9yCjEzIDAgUiAvRW5jb2RpbmcgL01hY1JvbWFuRW5jb2RpbmcgL0Zp\r\ncnN0Q2hhciAzMiAvTGFzdENoYXIgMTE3IC9XaWR0aHMgWyAyNzgKMCAwIDAgMCAwIDAgMCAwIDAg\r\nMCAwIDAgMCAyNzggMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMAow\r\nIDAgMCA3MjIgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAg\r\nNTM3IDAgNTM3IDU5MyA1MzcKMCAwIDAgMjIyIDAgMCAwIDg1MyA1NTYgNTc0IDAgMCAzMzMgNTAw\r\nIDMxNSA1NTYgXSA+PgplbmRvYmoKMTMgMCBvYmoKPDwgL1R5cGUgL0ZvbnREZXNjcmlwdG9yIC9G\r\nb250TmFtZSAvQUFBQUFCK0hlbHZldGljYU5ldWUgL0ZsYWdzIDMyIC9Gb250QkJveApbLTk1MSAt\r\nNDgxIDE5ODcgMTA3N10gL0l0YWxpY0FuZ2xlIDAgL0FzY2VudCA5NTIgL0Rlc2NlbnQgLTIxMyAv\r\nQ2FwSGVpZ2h0CjcxNCAvU3RlbVYgOTUgL0xlYWRpbmcgMjggL1hIZWlnaHQgNTE3IC9TdGVtSCA4\r\nMCAvQXZnV2lkdGggNDQ3IC9NYXhXaWR0aCAyMjI1Ci9Gb250RmlsZTIgMTQgMCBSID4+CmVuZG9i\r\nagoxNCAwIG9iago8PCAvTGVuZ3RoMSA1MTE2IC9MZW5ndGggMjkyNCAvRmlsdGVyIC9GbGF0ZURl\r\nY29kZSA+PgpzdHJlYW0KeAGtWFtsG8cVvbN8inrw/ZBIibtcvkmRImlSb4qyRVmyYteOzYS0IyuS\r\nrFgu4tpIVNdB0cBAG6PRR5OfBHBSpEULpCn6APPj0MxHjKZI2jQFjKIPIBCCfrRFUfijKJJ8JLHc\r\nM7sUIydpYBRZ++zcmZ2dPXPunTsjbjzy9TXqokukodLq2eXzpFz6KIpfr17YENU6ewml56Hzp8+2\r\n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\r\n2QB+6flPR9P82puYW3v4wtrGmdXlQ2v41Y/+C0639PUKZW5kc3RyZWFtCmVuZG9iagoxNSAwIG9i\r\nago8PCAvVGl0bGUgKHRlc3QgZG9jdW1lbnQpIC9Qcm9kdWNlciAobWFjT1MgVmVyc2lvbiAxMy42\r\nIFwoQnVpbGQgMjJHMTIwXCkgUXVhcnR6IFBERkNvbnRleHQpCi9DcmVhdG9yIChQYWdlcykgL0Ny\r\nZWF0aW9uRGF0ZSAoRDoyMDIzMTExNTA2MzczMlowMCcwMCcpIC9Nb2REYXRlIChEOjIwMjMxMTE1\r\nMDYzNzMyWjAwJzAwJykKPj4KZW5kb2JqCnhyZWYKMCAxNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAw\r\nMDAwMDAzMDMgMDAwMDAgbiAKMDAwMDAwMzQ1OCAwMDAwMCBuIAowMDAwMDAwMDIyIDAwMDAwIG4g\r\nCjAwMDAwMDA0MTMgMDAwMDAgbiAKMDAwMDAwMzIyMiAwMDAwMCBuIAowMDAwMDAzNjkxIDAwMDAw\r\nIG4gCjAwMDAwMDM2NDkgMDAwMDAgbiAKMDAwMDAwMDUxMCAwMDAwMCBuIAowMDAwMDAzMzEwIDAw\r\nMDAwIG4gCjAwMDAwMDMyNTcgMDAwMDAgbiAKMDAwMDAwMzM4NyAwMDAwMCBuIAowMDAwMDAzNTQ3\r\nIDAwMDAwIG4gCjAwMDAwMDQwNjggMDAwMDAgbiAKMDAwMDAwNDMzNCAwMDAwMCBuIAowMDAwMDA3\r\nMzQ2IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgMTYgL1Jvb3QgMTIgMCBSIC9JbmZvIDE1IDAg\r\nUiAvSUQgWyA8NjVjMDk0MTMwOWM0NmQ0Yzc3N2U5MDVjMTlmNTA1YzA+Cjw2NWMwOTQxMzA5YzQ2\r\nZDRjNzc3ZTkwNWMxOWY1MDVjMD4gXSA+PgpzdGFydHhyZWYKNzU0OQolJUVPRgo=\r\n--Apple-Mail=_B798A485-1F87-4E12-AED6-53086687FAB1\r\nContent-Transfer-Encoding: quoted-printable\r\nContent-Type: text/html;\r\n\tcharset=utf-8\r\n\r\n<html><head><meta http-equiv=3D\"content-type\" content=3D\"text/html; =\r\ncharset=3Dutf-8\"></head><body style=3D\"overflow-wrap: break-word; =\r\n-webkit-nbsp-mode: space; line-break: =\r\nafter-white-space;\"><div></div><div><br></div><div>Here=E2=80=99s the =\r\nattachment.</div><br><div>\r\n<meta charset=3D\"UTF-8\"><div dir=3D\"auto\" style=3D\"caret-color: rgb(0, =\r\n0, 0); color: rgb(0, 0, 0); letter-spacing: normal; text-align: start; =\r\ntext-indent: 0px; text-transform: none; white-space: normal; =\r\nword-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: =\r\nnone; overflow-wrap: break-word; -webkit-nbsp-mode: space; line-break: =\r\nafter-white-space;\"><div dir=3D\"auto\" style=3D\"caret-color: rgb(0, 0, =\r\n0); color: rgb(0, 0, 0); letter-spacing: normal; text-align: start; =\r\ntext-indent: 0px; text-transform: none; white-space: normal; =\r\nword-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: =\r\nnone; overflow-wrap: break-word; -webkit-nbsp-mode: space; line-break: =\r\nafter-white-space;\"><div dir=3D\"auto\" style=3D\"caret-color: rgb(0, 0, =\r\n0); color: rgb(0, 0, 0); letter-spacing: normal; text-align: start; =\r\ntext-indent: 0px; text-transform: none; white-space: normal; =\r\nword-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: =\r\nnone; overflow-wrap: break-word; -webkit-nbsp-mode: space; line-break: =\r\nafter-white-space;\"><div dir=3D\"auto\" style=3D\"caret-color: rgb(0, 0, =\r\n0); color: rgb(0, 0, 0); letter-spacing: normal; text-align: start; =\r\ntext-indent: 0px; text-transform: none; white-space: normal; =\r\nword-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: =\r\nnone; overflow-wrap: break-word; -webkit-nbsp-mode: space; line-break: =\r\nafter-white-space;\"><div dir=3D\"auto\" style=3D\"caret-color: rgb(0, 0, =\r\n0); color: rgb(0, 0, 0); letter-spacing: normal; text-align: start; =\r\ntext-indent: 0px; text-transform: none; white-space: normal; =\r\nword-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration: =\r\nnone; overflow-wrap: break-word; -webkit-nbsp-mode: space; line-break: =\r\nafter-white-space;\"><div>Best,<br><br>Matthew<br><a =\r\nhref=3D\"https://linkedin.com/in/MatthewSetter\">linkedin.com/in/MatthewSett=\r\ner</a>&nbsp;//&nbsp;<a =\r\nhref=3D\"https://twitter.com/settermjd\">@settermjd</a></div></div><br =\r\nclass=3D\"Apple-interchange-newline\"></div><br =\r\nclass=3D\"Apple-interchange-newline\"></div><br =\r\nclass=3D\"Apple-interchange-newline\"></div><br =\r\nclass=3D\"Apple-interchange-newline\"></div><br =\r\nclass=3D\"Apple-interchange-newline\"><br =\r\nclass=3D\"Apple-interchange-newline\">\r\n</div>\r\n<br></body></html>=\r\n\r\n--Apple-Mail=_B798A485-1F87-4E12-AED6-53086687FAB1--\r\n\r\n--Apple-Mail=_3D975E51-75F6-45A6-ABBA-CA35202CF09A--\r\n",
-            "dkim" => "{@twilio.com : pass}",
-            "sender_ip" => "148.163.153.13",
-            "to" => "inbound@parse.thebratwurstkangaroo.com",
-            "spam_score" => "-0.1",
-            "spam_report" => "Spam detection software, running on the system \"parsley-p1las1-spamassassin-65fbf9c65-95hhl\",\nhas NOT identified this incoming email as spam.  The original\nmessage has been attached to this so you can view it or label\nsimilar future email.  If you have any questions, see\nthe administrator of that system for details.\n\nContent preview:  ￼ Here’s the attachment. Best, \n\nContent analysis details:   (-0.1 points, 5.0 required)\n\n pts rule name              description\n---- ---------------------- --------------------------------------------------\n 0.0 URIBL_BLOCKED          ADMINISTRATOR NOTICE: The query to URIBL was\n 0.0 URIBL_ZEN_BLOCKED      ADMINISTRATOR NOTICE: The query to\n 0.0 RCVD_IN_ZEN_BLOCKED    RBL: ADMINISTRATOR NOTICE: The query to\n 0.0 HTML_MESSAGE           BODY: HTML included in message\n-0.1 DKIM_VALID             Message has at least one valid DKIM or DK signature\n-0.1 DKIM_VALID_AU          Message has a valid DKIM or DK signature from\n 0.1 DKIM_SIGNED            Message has a DKIM or DK signature, not necessarily\n-0.0 DKIMWL_WL_HIGH         DKIMwl.org - High trust sender\n"
-        ];
 
-        $homePage = new HomePageHandler($logger);
+        $userService = $this->createMock(UserService::class);
+        $userService
+            ->expects($this->once())
+            ->method('createNote')
+            ->with(Message::fromString($email))
+            ->willReturn(true);
+
+        $userEmail = "example@example.com";
+
+        $homePage = new HomePageHandler(
+            $this->entityManager,
+            new EmailParserService(),
+            $userService,
+            $logger
+        );
         $request = $this->createMock(
             ServerRequestInterface::class
         );
@@ -72,11 +141,11 @@ class HomePageHandlerTest extends TestCase
             ->willReturn($requestData);
         $response = $homePage->handle($request);
 
-        self::assertInstanceOf(
-            JsonResponse::class,
-            $response
+        self::assertInstanceOf(JsonResponse::class, $response);
+        self::assertSame(Http::CREATED->value, $response->getStatusCode());
+        self::assertSame(
+            $responseBody,
+            $response->getBody()->getContents()
         );
-        self::assertSame('""', $response->getBody()->getContents());
-
     }
 }
