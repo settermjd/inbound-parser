@@ -33,14 +33,20 @@ class Note
     private Collection $attachments;
 
     public function __construct(
-        ?int    $id,
         ?string $details,
-        ?User   $user,
+        ?User   $user = null,
+        ?int    $id = null,
     ) {
         $this->id   = $id;
         $this->description = $details;
         $this->user = $user;
         $this->attachments = new ArrayCollection();
+    }
+
+    public function setUser(?User $user): self
+    {
+        $this->user = $user;
+        return $this;
     }
 
     public function getId(): ?int

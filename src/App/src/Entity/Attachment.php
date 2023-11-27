@@ -24,13 +24,20 @@ class Attachment
     private ?Note $note;
 
     public function __construct(
-        ?string $file,
-        ?Note   $note,
-        ?int    $id
+        $file,
+        ?Note $note = null,
+        ?int $id = null
     ) {
         $this->id   = $id;
         $this->note = $note;
         $this->file = $file;
+    }
+
+    public function setNote(?Note $note): self
+    {
+        $this->note = $note;
+
+        return $this;
     }
 
     public function getId(): ?int
