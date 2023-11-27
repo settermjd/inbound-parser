@@ -83,4 +83,11 @@ class EmailParserServiceTest extends TestCase
             $matches
         );
     }
+
+    public function testCanGetReferenceIdFromSubject()
+    {
+        $subjectLine = "Reference ID: 123AQPOIU98765";
+        $service = new EmailParserService();
+        $this->assertSame("123AQPOIU98765", $service->getReferenceId($subjectLine));
+    }
 }

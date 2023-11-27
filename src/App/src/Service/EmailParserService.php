@@ -25,4 +25,10 @@ class EmailParserService
         $result = preg_match(self::VALID_SUBJECT_REGEX, $subjectLine);
         return $result === self::IS_VALID_SUBJECT;
     }
+
+    public function getReferenceId(string $subjectLine): string
+    {
+        preg_match(self::VALID_SUBJECT_REGEX, $subjectLine, $matches);
+        return $matches['refid'];
+    }
 }
