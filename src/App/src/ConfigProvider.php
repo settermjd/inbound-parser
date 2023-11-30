@@ -9,7 +9,11 @@ use App\Repository\NoteRepositoryFactory;
 use App\Repository\UserRepository;
 use App\Repository\UserRepositoryFactory;
 use App\Service\MonologServiceFactory;
+use App\Service\TwilioRestClientFactory;
+use App\Service\TwilioService;
+use App\Service\TwilioServiceFactory;
 use Psr\Log\LoggerInterface;
+use Twilio\Rest\Client;
 
 /**
  * The configuration provider for the App module
@@ -42,10 +46,12 @@ class ConfigProvider
                 Handler\PingHandler::class => Handler\PingHandler::class,
             ],
             'factories'  => [
+                Client::class => TwilioRestClientFactory::class,
                 Handler\HomePageHandler::class => Handler\HomePageHandlerFactory::class,
                 NoteRepository::class => NoteRepositoryFactory::class,
                 UserRepository::class => UserRepositoryFactory::class,
                 LoggerInterface::class => MonologServiceFactory::class,
+                TwilioService::class => TwilioServiceFactory::class,
             ],
         ];
     }
