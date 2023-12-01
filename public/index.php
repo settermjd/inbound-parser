@@ -10,9 +10,15 @@ if (PHP_SAPI === 'cli-server' && $_SERVER['SCRIPT_FILENAME'] !== __FILE__) {
 chdir(dirname(__DIR__));
 require 'vendor/autoload.php';
 
-if ($_SERVER['ENVIRONMENT'] === 'development') {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$environment = getenv("ENVIRONMENT", true) ?? 'production';
+if ($environment === 'development') {
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . "/../");
     $dotenv->load();
+    $dotenv->required([
+        'TWILIO_ACCOUNT_SID',
+        'TWILIO_AUTH_TOKEN',
+        'TWILIO_PHONE_NUMBER',
+    ])->notEmpty();
 }
 
 /**
