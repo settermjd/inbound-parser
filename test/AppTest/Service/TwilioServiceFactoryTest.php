@@ -1,6 +1,6 @@
 <?php
 
-namespace Service;
+namespace AppTest\Service;
 
 use App\Service\TwilioService;
 use App\Service\TwilioServiceFactory;
