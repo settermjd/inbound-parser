@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Handler;
 
+use App\Entity\User;
 use App\Service\EmailParserService;
+use App\Service\TwilioService;
 use App\Service\UserService;
 use Doctrine\ORM\EntityManager;
 use JustSteveKing\StatusCode\Http;
@@ -21,6 +23,7 @@ class HomePageHandler implements RequestHandlerInterface
         public readonly EntityManager $entityManager,
         public readonly EmailParserService $emailParserService,
         public readonly UserService $userService,
+        private readonly TwilioService $twilioService,
         public readonly LoggerInterface $logger
     ) {}
 
@@ -56,12 +59,39 @@ class HomePageHandler implements RequestHandlerInterface
 
         $this->userService->createNote($emailMessage);
 
+        $referenceId = $this->emailParserService
+            ->getReferenceId($parsedBody['subject']);
+        $senderEmail = $emailMessage
+            ->getFrom()
+            ->current()
+            ->getEmail();
+
+        $attachments = array_filter(
+            $emailMessage->getBody()->getParts(),
+            function ($part, $index) {
+                return str_starts_with((string)$part->getDisposition(), "attachment");
+            },
+            ARRAY_FILTER_USE_BOTH
+        );
+        $pdfFilename = $attachments[1]->getDisposition();
+
+        $userRepository = $this->entityManager->getRepository(User::class);
+        $user = $userRepository->findOneBy([
+            'email' => $emailMessage->getFrom()->current()->getEmail()
+        ]);
+
+        $result = $this->twilioService
+            ->sendNewNoteNotification(
+                recipient: $user,
+                attachments: $attachments
+            );
+
         return new JsonResponse(
             [
                 'status' => 'success',
                 'data' => [
-                    'reference id' => $this->emailParserService->getReferenceId($parsedBody['subject']),
-                    'from' => $emailMessage->getFrom()->current()->getEmail(),
+                    'reference id' => $referenceId,
+                    'from' => $senderEmail,
                 ]
             ],
             Http::CREATED->value

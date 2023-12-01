@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Handler;
 
 use App\Service\EmailParserService;
+use App\Service\TwilioService;
 use App\Service\UserService;
 use Doctrine\ORM\EntityManager;
 use Psr\Container\ContainerInterface;
@@ -19,6 +20,7 @@ class HomePageHandlerFactory
             $container->get(EntityManager::class),
             $container->get(EmailParserService::class),
             $container->get(UserService::class),
+            $container->get(TwilioService::class),
             $container->get(LoggerInterface::class)
         );
     }

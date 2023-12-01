@@ -11,6 +11,7 @@ use App\Entity\User;
 use App\Handler\HomePageHandler;
 use App\Repository\UserRepository;
 use App\Service\EmailParserService;
+use App\Service\TwilioService;
 use App\Service\UserService;
 use Doctrine\ORM\EntityManager;
 use JustSteveKing\StatusCode\Http;
@@ -21,6 +22,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
+use Twilio\Rest\Api\V2010\Account\MessageInstance;
+use Twilio\Rest\Client;
 
 class HomePageHandlerTest extends TestCase
 {
@@ -55,6 +58,7 @@ class HomePageHandlerTest extends TestCase
             $this->entityManager,
             new EmailParserService(),
             $this->createMock(UserService::class),
+            $this->createMock(TwilioService::class),
             $this->createMock(LoggerInterface::class)
         );
         $request = $this->createMock(
@@ -116,20 +120,45 @@ class HomePageHandlerTest extends TestCase
                 ]
             );
 
-
         $userService = $this->createMock(UserService::class);
+        $message = Message::fromString($email);
         $userService
             ->expects($this->once())
             ->method('createNote')
-            ->with(Message::fromString($email))
+            ->with($message)
             ->willReturn(true);
 
         $userEmail = "example@example.com";
+
+        $smsBody = "Hi Matthew. This a quick confirmation that \"test document.pdf\" has been added as a note on your account, along with the text, which you can find in the attachment to this SMS.";
+        $recipient = "+6140912341234";
+        $sender = "+6140912341244";
+
+        $userRepository = $this->createMock(UserRepository::class);
+        $user = $this->createMock(User::class);
+        $userRepository
+            ->expects($this->once())
+            ->method('findOneBy')
+            ->with(['email' => $userEmail])
+            ->willReturn($user);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('getRepository')
+            ->willReturnOnConsecutiveCalls($userRepository);
+
+        $twilioService = $this->createMock(TwilioService::class);
+        $twilioService
+            ->expects($this->once())
+            ->method('sendNewNoteNotification')
+            ->with($user, $message->getAttachments())
+            ->willReturn(true);
 
         $homePage = new HomePageHandler(
             $this->entityManager,
             new EmailParserService(),
             $userService,
+            $twilioService,
             $logger
         );
         $request = $this->createMock(

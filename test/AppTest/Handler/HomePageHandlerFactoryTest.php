@@ -7,6 +7,7 @@ namespace AppTest\Handler;
 use App\Handler\HomePageHandler;
 use App\Handler\HomePageHandlerFactory;
 use App\Service\EmailParserService;
+use App\Service\TwilioService;
 use App\Service\UserService;
 use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -29,12 +30,13 @@ class HomePageHandlerFactoryTest extends TestCase
         $entityManager = $this->createMock(EntityManager::class);
 
         $this->container
-            ->expects($this->atMost(4))
+            ->expects($this->atMost(5))
             ->method('get')
             ->willReturnOnConsecutiveCalls(
                 $entityManager,
                 $this->createMock(EmailParserService::class),
                 $this->createMock(UserService::class),
+                $this->createMock(TwilioService::class),
                 $logger
             );
 
