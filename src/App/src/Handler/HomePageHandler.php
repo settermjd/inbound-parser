@@ -44,8 +44,7 @@ class HomePageHandler implements RequestHandlerInterface
             );
         }
 
-        $this->logger
-            ->info(
+        $this->logger->info(
                 'Inbound parsed data from SendGrid',
                 [
                     'subject' => $parsedBody['subject'],
