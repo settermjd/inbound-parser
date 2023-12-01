@@ -49,6 +49,7 @@ class ConfigProvider
             ],
             'factories'  => [
                 Client::class => TwilioRestClientFactory::class,
+                Handler\GetMessageBodyHandler::class => Handler\GetMessageBodyHandlerFactory::class,
                 Handler\HomePageHandler::class => Handler\HomePageHandlerFactory::class,
                 NoteRepository::class => NoteRepositoryFactory::class,
                 UserRepository::class => UserRepositoryFactory::class,

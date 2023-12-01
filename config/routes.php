@@ -39,5 +39,13 @@ use Psr\Container\ContainerInterface;
 
 return static function (Application $app, MiddlewareFactory $factory, ContainerInterface $container): void {
     $app->post('/', App\Handler\HomePageHandler::class, 'home');
+    $app->get(
+        '/note/{note:\d+}',
+        [
+            \Mezzio\Helper\ContentLengthMiddleware::class,
+            App\Handler\GetMessageBodyHandler::class,
+        ],
+        'note.download'
+    );
     $app->get('/api/ping', App\Handler\PingHandler::class, 'api.ping');
 };
