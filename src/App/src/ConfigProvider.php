@@ -8,6 +8,7 @@ use App\Repository\NoteRepository;
 use App\Repository\NoteRepositoryFactory;
 use App\Repository\UserRepository;
 use App\Repository\UserRepositoryFactory;
+use App\Service\EmailParserService;
 use App\Service\MonologServiceFactory;
 use App\Service\TwilioRestClientFactory;
 use App\Service\TwilioService;
@@ -45,6 +46,7 @@ class ConfigProvider
     {
         return [
             'invokables' => [
+                EmailParserService::class => EmailParserService::class,
                 Handler\PingHandler::class => Handler\PingHandler::class,
             ],
             'factories'  => [
