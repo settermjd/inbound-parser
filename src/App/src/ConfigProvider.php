@@ -15,6 +15,7 @@ use App\Service\TwilioService;
 use App\Service\TwilioServiceFactory;
 use App\Service\UserNoteService;
 use App\Service\UserNoteServiceFactory;
+use Mezzio\Helper\ContentLengthMiddleware;
 use Psr\Log\LoggerInterface;
 use Twilio\Rest\Client;
 
@@ -46,6 +47,7 @@ class ConfigProvider
     {
         return [
             'invokables' => [
+                ContentLengthMiddleware::class => ContentLengthMiddleware::class,
                 EmailParserService::class => EmailParserService::class,
                 Handler\PingHandler::class => Handler\PingHandler::class,
             ],
