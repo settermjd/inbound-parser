@@ -120,32 +120,26 @@ class HomePageHandlerTest extends TestCase
                 ]
             );
 
+        $user = $this->createMock(User::class);
+        $note = $this->createMock(Note::class);
+        $note
+            ->expects($this->once())
+            ->method('getUser')
+            ->willReturn($user);
+
         $userService = $this->createMock(UserNoteService::class);
         $message = Message::fromString($email);
         $userService
             ->expects($this->once())
             ->method('createNote')
             ->with($message)
-            ->willReturn(true);
+            ->willReturn($note);
 
         $userEmail = "example@example.com";
 
         $smsBody = "Hi Matthew. This a quick confirmation that \"test document.pdf\" has been added as a note on your account, along with the text, which you can find in the attachment to this SMS.";
         $recipient = "+6140912341234";
         $sender = "+6140912341244";
-
-        $userRepository = $this->createMock(UserRepository::class);
-        $user = $this->createMock(User::class);
-        $userRepository
-            ->expects($this->once())
-            ->method('findOneBy')
-            ->with(['email' => $userEmail])
-            ->willReturn($user);
-
-        $this->entityManager
-            ->expects($this->once())
-            ->method('getRepository')
-            ->willReturnOnConsecutiveCalls($userRepository);
 
         $twilioService = $this->createMock(TwilioService::class);
         $twilioService

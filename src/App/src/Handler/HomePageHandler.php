@@ -22,7 +22,7 @@ class HomePageHandler implements RequestHandlerInterface
     public function __construct(
         public readonly EntityManager      $entityManager,
         public readonly EmailParserService $emailParserService,
-        public readonly UserNoteService    $userService,
+        public readonly UserNoteService    $userNoteService,
         private readonly TwilioService     $twilioService,
         public readonly LoggerInterface    $logger
     ) {}
@@ -57,34 +57,20 @@ class HomePageHandler implements RequestHandlerInterface
 
         $emailMessage = Message::fromString($parsedBody['email']);
 
-        $this->userService->createNote($emailMessage);
+        $note = $this->userNoteService->createNote($emailMessage);
 
-        $referenceId = $this->emailParserService
-            ->getReferenceId($parsedBody['subject']);
+        $this->twilioService
+            ->sendNewNoteNotification(
+                recipient: $note->getUser(),
+                attachments: $emailMessage->getAttachments()
+            );
+
+        $referenceId = $this->emailParserService->getReferenceId($parsedBody['subject']);
+
         $senderEmail = $emailMessage
             ->getFrom()
             ->current()
             ->getEmail();
-
-        $attachments = array_filter(
-            $emailMessage->getBody()->getParts(),
-            function ($part, $index) {
-                return str_starts_with((string)$part->getDisposition(), "attachment");
-            },
-            ARRAY_FILTER_USE_BOTH
-        );
-        $pdfFilename = $attachments[1]->getDisposition();
-
-        $userRepository = $this->entityManager->getRepository(User::class);
-        $user = $userRepository->findOneBy([
-            'email' => $emailMessage->getFrom()->current()->getEmail()
-        ]);
-
-        $result = $this->twilioService
-            ->sendNewNoteNotification(
-                recipient: $user,
-                attachments: $attachments
-            );
 
         return new JsonResponse(
             [

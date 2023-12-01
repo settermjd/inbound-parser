@@ -56,11 +56,8 @@ class UserNoteServiceTest extends TestCase
         $service->createNote($emailMessage);
     }
 
-    public function testCanCreateNoteForExistingUser()
+    public function testCanCreateNoteForExistingUserAndReturnThatNote()
     {
-        $email = file_get_contents(
-            __DIR__ . '/../../_files/mail_with_pdf_attachment.eml'
-        );
         $logger = $this->createMock(LoggerInterface::class);
         $user = $this->createMock(User::class);
         $note = new Note(
@@ -94,11 +91,15 @@ class UserNoteServiceTest extends TestCase
             ->expects($this->once())
             ->method('flush');
 
+        $email = file_get_contents(
+            __DIR__ . '/../../_files/mail_with_pdf_attachment.eml'
+        );
         $emailMessage = Message::fromString($email);
 
         $service = new UserNoteService($this->entityManager, $logger);
         $result = $service->createNote($emailMessage);
 
-        $this->assertTrue($result);
+        $this->assertInstanceOf(Note::class, $result);
+        $this->assertEquals($note, $result);
     }
 }

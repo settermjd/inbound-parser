@@ -28,7 +28,7 @@ class UserNoteService
      * @throws NotSupported
      * @throws UserNotFoundException
      */
-    public function createNote(Message $emailMessage): bool
+    public function createNote(Message $emailMessage): Note
     {
         $userRepository = $this->entityManager->getRepository(User::class);
         $user = $userRepository->findOneBy([
@@ -46,7 +46,9 @@ class UserNoteService
             );
         }
 
-        $note = new Note(details: $emailMessage->getPlainTextBodyPart()->getRawContent());
+        $note = new Note(
+            details: trim($emailMessage->getPlainTextBodyPart()->getRawContent())
+        );
         $note->setUser($user);
         $this->entityManager->persist($note);
 
@@ -61,6 +63,6 @@ class UserNoteService
 
         $this->entityManager->flush();
 
-        return true;
+        return $note;
     }
 }
