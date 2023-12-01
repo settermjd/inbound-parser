@@ -5,9 +5,13 @@ namespace App\Service;
 use App\Entity\Attachment;
 use App\Entity\Note;
 use App\Entity\User;
+use App\Exception\UserNotFoundException;
 use App\Iterator\MessagePartFilterIterator;
 use App\Iterator\PartsIterator;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Exception\NotSupported;
+use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\OptimisticLockException;
 use Laminas\Mail\Message;
 use Laminas\Mime\Message as MimeMessage;
 use Laminas\Mime\Part;
@@ -21,6 +25,12 @@ class UserService
         public readonly LoggerInterface $logger
     ){}
 
+    /**
+     * @throws OptimisticLockException
+     * @throws ORMException
+     * @throws NotSupported
+     * @throws UserNotFoundException
+     */
     public function createNote(Message $emailMessage): bool
     {
         $userRepository = $this->entityManager->getRepository(User::class);
@@ -30,22 +40,20 @@ class UserService
         if ($user === null) {
             $addresses = $emailMessage->getFrom();
             $addresses->rewind();
-            $sender = $addresses->current()->getEmail();
+            $userEmail = $addresses->current()->getEmail();
             $this->logger->debug('Could not retrieve user', [
-                'sender' => $sender,
+                'sender' => $userEmail,
             ]);
+            throw new UserNotFoundException(
+                "User with email address $userEmail was not found."
+            );
         }
 
-        $messageBody = $emailMessage->getBody();
-
-        $attachments = $this->getAttachments($messageBody);
-        $noteParts = $this->getEmailMessage($messageBody);
-        $content = trim($noteParts[0]->getContent());
-
-        $note = new Note(details: $content,);
+        $note = new Note(details: $emailMessage->getPlainTextBodyPart()->getRawContent());
         $note->setUser($user);
         $this->entityManager->persist($note);
 
+        $attachments = $emailMessage->getAttachments();
         foreach ($attachments as $emailAttachment) {
             $attachment = new Attachment(
                 file: $emailAttachment->getRawContent()
@@ -57,35 +65,5 @@ class UserService
         $this->entityManager->flush();
 
         return true;
-    }
-
-    /**
-     * @param $messageBody
-     * @return array
-     */
-    public function getAttachments($messageBody): array
-    {
-        return array_filter(
-            $messageBody->getParts(),
-            function ($part, $index) {
-                return str_starts_with((string)$part->getDisposition(), "attachment");
-            },
-            ARRAY_FILTER_USE_BOTH
-        );
-    }
-
-    /**
-     * @return Part[]
-     */
-    public function getEmailMessage(MimeMessage $messageBody): array
-    {
-        $parts = new RecursiveIteratorIterator(
-            new MessagePartFilterIterator(
-                new PartsIterator($messageBody->getParts())
-            ),
-            RecursiveIteratorIterator::SELF_FIRST
-        );
-
-        return iterator_to_array($parts);
     }
 }

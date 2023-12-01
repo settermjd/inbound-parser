@@ -5,6 +5,7 @@ namespace AppTest\Service;
 use App\Entity\Attachment;
 use App\Entity\Note;
 use App\Entity\User;
+use App\Exception\UserNotFoundException;
 use App\Repository\UserRepository;
 use App\Service\UserService;
 use Doctrine\ORM\EntityManager;
@@ -20,6 +21,39 @@ class UserServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->entityManager = $this->createMock(EntityManager::class);
+    }
+
+    public function testThrowsExceptionIfUserMatchingEmailAddressIsNotFound()
+    {
+        $userEmail = "example@example.com";
+
+        $this->expectException(UserNotFoundException::class);
+        $this->expectExceptionMessage(
+            "User with email address $userEmail was not found."
+        );
+
+        $email = file_get_contents(
+            __DIR__ . '/../../_files/mail_with_pdf_attachment.eml'
+        );
+
+        $userRepository = $this->createMock(UserRepository::class);
+        $userRepository
+            ->expects($this->once())
+            ->method('findOneBy')
+            ->with(['email' => $userEmail])
+            ->willReturn(null);
+
+        $this->entityManager
+            ->expects($this->once())
+            ->method('getRepository')
+            ->willReturnOnConsecutiveCalls($userRepository);
+
+        $emailMessage = Message::fromString($email);
+
+        $logger = $this->createMock(LoggerInterface::class);
+
+        $service = new UserService($this->entityManager, $logger);
+        $service->createNote($emailMessage);
     }
 
     public function testCanCreateNoteForExistingUser()

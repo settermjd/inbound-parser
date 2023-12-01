@@ -25,6 +25,9 @@ class User
     #[ORM\Column(name: 'email', type: Types::STRING, length: 200, unique: true, nullable: false)]
     private ?string $email;
 
+    #[ORM\Column(name: 'phoneNumber', type: Types::STRING, length: 15, unique: true, nullable: false)]
+    private ?string $phoneNumber;
+
     /**
      * @var Collection<int, Note>
      */
@@ -34,12 +37,19 @@ class User
     public function __construct(
         ?string $name,
         ?string $email,
+        ?string $phoneNumber,
         ?int $id = null,
     ) {
         $this->id    = $id;
         $this->name  = $name;
         $this->email = $email;
+        $this->phoneNumber = $phoneNumber;
         $this->notes = new ArrayCollection();
+    }
+
+    public function getPhoneNumber(): ?string
+    {
+        return $this->phoneNumber;
     }
 
     public function getId(): ?int
