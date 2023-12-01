@@ -12,7 +12,7 @@ use App\Handler\HomePageHandler;
 use App\Repository\UserRepository;
 use App\Service\EmailParserService;
 use App\Service\TwilioService;
-use App\Service\UserService;
+use App\Service\UserNoteService;
 use Doctrine\ORM\EntityManager;
 use JustSteveKing\StatusCode\Http;
 use Laminas\Diactoros\Response\JsonResponse;
@@ -57,7 +57,7 @@ class HomePageHandlerTest extends TestCase
         $homePage = new HomePageHandler(
             $this->entityManager,
             new EmailParserService(),
-            $this->createMock(UserService::class),
+            $this->createMock(UserNoteService::class),
             $this->createMock(TwilioService::class),
             $this->createMock(LoggerInterface::class)
         );
@@ -120,7 +120,7 @@ class HomePageHandlerTest extends TestCase
                 ]
             );
 
-        $userService = $this->createMock(UserService::class);
+        $userService = $this->createMock(UserNoteService::class);
         $message = Message::fromString($email);
         $userService
             ->expects($this->once())

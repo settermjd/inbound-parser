@@ -1,24 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Service;
 
 use App\Entity\Attachment;
 use App\Entity\Note;
 use App\Entity\User;
 use App\Exception\UserNotFoundException;
-use App\Iterator\MessagePartFilterIterator;
-use App\Iterator\PartsIterator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Exception\NotSupported;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\OptimisticLockException;
 use Laminas\Mail\Message;
-use Laminas\Mime\Message as MimeMessage;
-use Laminas\Mime\Part;
 use Psr\Log\LoggerInterface;
-use RecursiveIteratorIterator;
 
-class UserService
+class UserNoteService
 {
     public function __construct(
         public readonly EntityManager $entityManager,

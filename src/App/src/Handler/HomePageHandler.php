@@ -7,7 +7,7 @@ namespace App\Handler;
 use App\Entity\User;
 use App\Service\EmailParserService;
 use App\Service\TwilioService;
-use App\Service\UserService;
+use App\Service\UserNoteService;
 use Doctrine\ORM\EntityManager;
 use JustSteveKing\StatusCode\Http;
 use Laminas\Diactoros\Response\JsonResponse;
@@ -20,11 +20,11 @@ use Psr\Log\LoggerInterface;
 class HomePageHandler implements RequestHandlerInterface
 {
     public function __construct(
-        public readonly EntityManager $entityManager,
+        public readonly EntityManager      $entityManager,
         public readonly EmailParserService $emailParserService,
-        public readonly UserService $userService,
-        private readonly TwilioService $twilioService,
-        public readonly LoggerInterface $logger
+        public readonly UserNoteService    $userService,
+        private readonly TwilioService     $twilioService,
+        public readonly LoggerInterface    $logger
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface

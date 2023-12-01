@@ -6,7 +6,7 @@ namespace App\Handler;
 
 use App\Service\EmailParserService;
 use App\Service\TwilioService;
-use App\Service\UserService;
+use App\Service\UserNoteService;
 use Doctrine\ORM\EntityManager;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -19,7 +19,7 @@ class HomePageHandlerFactory
         return new HomePageHandler(
             $container->get(EntityManager::class),
             $container->get(EmailParserService::class),
-            $container->get(UserService::class),
+            $container->get(UserNoteService::class),
             $container->get(TwilioService::class),
             $container->get(LoggerInterface::class)
         );

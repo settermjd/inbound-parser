@@ -8,7 +8,7 @@ use App\Handler\HomePageHandler;
 use App\Handler\HomePageHandlerFactory;
 use App\Service\EmailParserService;
 use App\Service\TwilioService;
-use App\Service\UserService;
+use App\Service\UserNoteService;
 use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -35,7 +35,7 @@ class HomePageHandlerFactoryTest extends TestCase
             ->willReturnOnConsecutiveCalls(
                 $entityManager,
                 $this->createMock(EmailParserService::class),
-                $this->createMock(UserService::class),
+                $this->createMock(UserNoteService::class),
                 $this->createMock(TwilioService::class),
                 $logger
             );

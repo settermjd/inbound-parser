@@ -7,14 +7,14 @@ use App\Entity\Note;
 use App\Entity\User;
 use App\Exception\UserNotFoundException;
 use App\Repository\UserRepository;
-use App\Service\UserService;
+use App\Service\UserNoteService;
 use Doctrine\ORM\EntityManager;
 use Laminas\Mail\Message;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
-class UserServiceTest extends TestCase
+class UserNoteServiceTest extends TestCase
 {
     private EntityManager|MockObject $entityManager;
 
@@ -52,7 +52,7 @@ class UserServiceTest extends TestCase
 
         $logger = $this->createMock(LoggerInterface::class);
 
-        $service = new UserService($this->entityManager, $logger);
+        $service = new UserNoteService($this->entityManager, $logger);
         $service->createNote($emailMessage);
     }
 
@@ -96,7 +96,7 @@ class UserServiceTest extends TestCase
 
         $emailMessage = Message::fromString($email);
 
-        $service = new UserService($this->entityManager, $logger);
+        $service = new UserNoteService($this->entityManager, $logger);
         $result = $service->createNote($emailMessage);
 
         $this->assertTrue($result);
