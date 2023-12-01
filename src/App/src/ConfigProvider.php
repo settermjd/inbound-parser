@@ -12,6 +12,8 @@ use App\Service\MonologServiceFactory;
 use App\Service\TwilioRestClientFactory;
 use App\Service\TwilioService;
 use App\Service\TwilioServiceFactory;
+use App\Service\UserNoteService;
+use App\Service\UserNoteServiceFactory;
 use Psr\Log\LoggerInterface;
 use Twilio\Rest\Client;
 
@@ -52,6 +54,7 @@ class ConfigProvider
                 UserRepository::class => UserRepositoryFactory::class,
                 LoggerInterface::class => MonologServiceFactory::class,
                 TwilioService::class => TwilioServiceFactory::class,
+                UserNoteService::class => UserNoteServiceFactory::class,
             ],
         ];
     }
