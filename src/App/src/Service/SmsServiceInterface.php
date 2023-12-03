@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Service;
 
-use App\Entity\User;
+use App\Entity\Note;
 
 interface SmsServiceInterface
 {
     public function sendNewNoteNotification(
-        User $recipient,
+        Note $note,
         array $attachments = [],
     ): bool;
 }

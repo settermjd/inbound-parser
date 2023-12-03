@@ -14,7 +14,8 @@ class TwilioServiceFactory
         $client = $container->get(Client::class);
         $config = $container->get('config');
         $sender = $config['twilio']['phone_number'];
+        $baseUrl = $config['app']['baseUrl'];
 
-        return new TwilioService($client, $sender);
+        return new TwilioService($client, $sender, $baseUrl);
     }
 }

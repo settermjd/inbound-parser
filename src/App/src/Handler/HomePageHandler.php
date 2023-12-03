@@ -60,7 +60,7 @@ class HomePageHandler implements RequestHandlerInterface
 
         $this->twilioService
             ->sendNewNoteNotification(
-                recipient: $note->getUser(),
+                note: $note,
                 attachments: $emailMessage->getAttachments()
             );
 

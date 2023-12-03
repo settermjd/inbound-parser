@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\Note;
 use App\Entity\User;
 use Laminas\Mime\Part;
 use Twilio\Exceptions\TwilioException;
@@ -22,7 +23,8 @@ EOF;
 
     public function __construct(
         private readonly Client $client,
-        private readonly string $sender
+        private readonly string $sender,
+        private readonly string $baseUrl,
     ) {
     }
 
@@ -31,17 +33,17 @@ EOF;
      * @throws TwilioException
      */
     public function sendNewNoteNotification(
-        User $recipient,
+        Note $note,
         array $attachments = [],
     ): bool
     {
         $bodyTemplate = $this->templateMessageWithAttachments;
         $message = $this->client->messages
-            ->create($recipient->getPhoneNumber(),
+            ->create($note->getUser()->getPhoneNumber(),
                 [
                     "body" => sprintf(
                         $bodyTemplate,
-                        $recipient->getName(),
+                        $note->getUser()->getName(),
                         implode(
                             ', ',
                             array_map(
@@ -50,7 +52,14 @@ EOF;
                             )
                         )
                     ),
-                    "sender" => $this->sender
+                    "from" => $this->sender,
+                    "mediaUrl" => [
+                        sprintf(
+                            "%s/note/%d",
+                            $this->baseUrl,
+                            $note->getId()
+                        )
+                    ]
                 ]
             );
 

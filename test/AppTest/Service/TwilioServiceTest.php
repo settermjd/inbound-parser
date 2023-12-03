@@ -2,6 +2,7 @@
 
 namespace AppTest\Service;
 
+use App\Entity\Note;
 use App\Entity\User;
 use App\Service\TwilioService;
 use Laminas\Mime\Part;
@@ -21,6 +22,16 @@ class TwilioServiceTest extends TestCase
             "+6140912341234"
         );
         $sender = "+6140912341244";
+        $messageBody = sprintf(
+            $message,
+            $recipient->getName(),
+            "test document.pdf"
+        );
+        $note = new Note(
+            details: $messageBody,
+            user: $recipient,
+            id: 12,
+        );
 
         $messageInstance = $this->createMock(MessageInstance::class);
         $messageInstance->status = 'queued';
@@ -33,19 +44,16 @@ class TwilioServiceTest extends TestCase
             ->with(
                 $recipient->getPhoneNumber(),
                 [
-                    'body' => sprintf(
-                        $message,
-                        $recipient->getName(),
-                        "test document.pdf"
-                    ),
-                    'sender' => $sender,
+                    'body' => $messageBody,
+                    'from' => $sender,
+                    'mediaUrl' => ["https://localhost/note/12"]
                 ]
             )
             ->willReturn(
                 $messageInstance
             );
 
-        $twilioService = new TwilioService($client, $sender);
+        $twilioService = new TwilioService($client, $sender, 'https://localhost');
 
         $attachment = $this->createMock(Part::class);
         $attachment
@@ -55,7 +63,7 @@ class TwilioServiceTest extends TestCase
 
         $this->assertTrue(
             $twilioService->sendNewNoteNotification(
-                recipient: $recipient,
+                note: $note,
                 attachments: [
                     $attachment
                 ]

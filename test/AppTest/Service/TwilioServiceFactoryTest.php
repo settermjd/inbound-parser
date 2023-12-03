@@ -19,6 +19,9 @@ class TwilioServiceFactoryTest extends TestCase
             ->willReturnOnConsecutiveCalls(
                 $this->createMock(Client::class),
                 [
+                    'app' => [
+                        'baseUrl' => 'https://localhost'
+                    ],
                     'twilio' => [
                         'phone_number' => '+611234567890'
                     ]

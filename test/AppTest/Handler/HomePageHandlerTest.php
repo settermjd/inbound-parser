@@ -120,12 +120,7 @@ class HomePageHandlerTest extends TestCase
                 ]
             );
 
-        $user = $this->createMock(User::class);
         $note = $this->createMock(Note::class);
-        $note
-            ->expects($this->once())
-            ->method('getUser')
-            ->willReturn($user);
 
         $userService = $this->createMock(UserNoteService::class);
         $message = Message::fromString($email);
@@ -145,7 +140,7 @@ class HomePageHandlerTest extends TestCase
         $twilioService
             ->expects($this->once())
             ->method('sendNewNoteNotification')
-            ->with($user, $message->getAttachments())
+            ->with($note, $message->getAttachments())
             ->willReturn(true);
 
         $homePage = new HomePageHandler(
