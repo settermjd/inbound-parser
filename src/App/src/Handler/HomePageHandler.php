@@ -56,15 +56,11 @@ class HomePageHandler implements RequestHandlerInterface
 
         $emailMessage = Message::fromString($parsedBody['email']);
 
-        $note = $this->userNoteService->createNote($emailMessage);
-
         $this->twilioService
             ->sendNewNoteNotification(
-                note: $note,
+                note: $this->userNoteService->createNote($emailMessage),
                 attachments: $emailMessage->getAttachments()
             );
-
-        $referenceId = $this->emailParserService->getReferenceId($parsedBody['subject']);
 
         $senderEmail = $emailMessage
             ->getFrom()
@@ -75,7 +71,7 @@ class HomePageHandler implements RequestHandlerInterface
             [
                 'status' => 'success',
                 'data' => [
-                    'reference id' => $referenceId,
+                    'reference id' => $this->emailParserService->getReferenceId($parsedBody['subject']),
                     'from' => $senderEmail,
                 ]
             ],
