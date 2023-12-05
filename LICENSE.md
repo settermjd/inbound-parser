@@ -1,4 +1,4 @@
-Copyright (c) 2020 Laminas Project a Series of LF Projects, LLC.
+Copyright (c) 2023 Matthew Setter.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -10,7 +10,7 @@ modification, are permitted provided that the following conditions are met:
   this list of conditions and the following disclaimer in the documentation
   and/or other materials provided with the distribution.
 
-- Neither the name of Laminas Foundation nor the names of its contributors may
+- The name of "Matthew Setter" may not
   be used to endorse or promote products derived from this software without
   specific prior written permission.
 
