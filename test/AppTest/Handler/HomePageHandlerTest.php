@@ -16,6 +16,7 @@ use App\Service\UserNoteService;
 use Doctrine\ORM\EntityManager;
 use JustSteveKing\StatusCode\Http;
 use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\EventManager\EventManager;
 use Laminas\Mail\Message;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -59,7 +60,7 @@ class HomePageHandlerTest extends TestCase
             new EmailParserService(),
             $this->createMock(UserNoteService::class),
             $this->createMock(TwilioService::class),
-            $this->createMock(LoggerInterface::class)
+            $this->createMock(EventManager::class)
         );
         $request = $this->createMock(
             ServerRequestInterface::class
@@ -84,7 +85,6 @@ class HomePageHandlerTest extends TestCase
 
     public function testHandlesValidRequest(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
 
         $email = file_get_contents(
             __DIR__ . '/../../_files/mail_with_pdf_attachment.eml'
@@ -107,6 +107,7 @@ class HomePageHandlerTest extends TestCase
             "spam_report" => "Spam detection software, running on the system \"parsley-p1las1-spamassassin-65fbf9c65-95hhl\",\nhas NOT identified this incoming email as spam.  The original\nmessage has been attached to this so you can view it or label\nsimilar future email.  If you have any questions, see\nthe administrator of that system for details.\n\nContent preview:  ￼ Here’s the attachment. Best, \n\nContent analysis details:   (-0.1 points, 5.0 required)\n\n pts rule name              description\n---- ---------------------- --------------------------------------------------\n 0.0 URIBL_BLOCKED          ADMINISTRATOR NOTICE: The query to URIBL was\n 0.0 URIBL_ZEN_BLOCKED      ADMINISTRATOR NOTICE: The query to\n 0.0 RCVD_IN_ZEN_BLOCKED    RBL: ADMINISTRATOR NOTICE: The query to\n 0.0 HTML_MESSAGE           BODY: HTML included in message\n-0.1 DKIM_VALID             Message has at least one valid DKIM or DK signature\n-0.1 DKIM_VALID_AU          Message has a valid DKIM or DK signature from\n 0.1 DKIM_SIGNED            Message has a DKIM or DK signature, not necessarily\n-0.0 DKIMWL_WL_HIGH         DKIMwl.org - High trust sender\n"
         ];
 
+        /*$logger = $this->createMock(LoggerInterface::class);
         $logger
             ->expects($this->once())
             ->method('info')
@@ -118,7 +119,7 @@ class HomePageHandlerTest extends TestCase
                     "envelope" => '{"to":["inbound@example.org"],"from":"sender@example.net"}',
                     'email' => $email,
                 ]
-            );
+            );*/
 
         $note = $this->createMock(Note::class);
 
@@ -148,7 +149,7 @@ class HomePageHandlerTest extends TestCase
             new EmailParserService(),
             $userService,
             $twilioService,
-            $logger
+            $this->createMock(EventManager::class)
         );
         $request = $this->createMock(
             ServerRequestInterface::class

@@ -4,32 +4,38 @@ declare(strict_types=1);
 
 namespace App\Handler;
 
-use App\Entity\User;
+use App\EventManagerAwareTrait;
 use App\Service\EmailParserService;
 use App\Service\TwilioService;
 use App\Service\UserNoteService;
 use Doctrine\ORM\EntityManager;
 use JustSteveKing\StatusCode\Http;
 use Laminas\Diactoros\Response\JsonResponse;
+use Laminas\EventManager\EventManager;
 use Laminas\Mail\Message;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Psr\Log\LoggerInterface;
 
 class HomePageHandler implements RequestHandlerInterface
 {
+    use EventManagerAwareTrait;
+
     public function __construct(
         public readonly EntityManager      $entityManager,
         public readonly EmailParserService $emailParserService,
         public readonly UserNoteService    $userNoteService,
         private readonly TwilioService     $twilioService,
-        public readonly LoggerInterface    $logger
+        private readonly EventManager      $eventManager
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $parsedBody = $request->getParsedBody();
+
+        if ($this->hasEventManager()) {
+            $this->getEventManager()->trigger('sendgrid_data', null, $parsedBody);
+        }
 
         if (
             ! array_key_exists('subject', $parsedBody)
@@ -43,16 +49,6 @@ class HomePageHandler implements RequestHandlerInterface
                 Http::UNPROCESSABLE_ENTITY->value
             );
         }
-
-        $this->logger->info(
-                'Inbound parsed data from SendGrid',
-                [
-                    'subject' => $parsedBody['subject'],
-                    'spam_score' => $parsedBody['spam_score'],
-                    'envelope' => $parsedBody['envelope'],
-                    'email' => $parsedBody['email'],
-                ]
-            );
 
         $emailMessage = Message::fromString($parsedBody['email']);
 

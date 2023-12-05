@@ -10,6 +10,7 @@ use App\Service\EmailParserService;
 use App\Service\TwilioService;
 use App\Service\UserNoteService;
 use Doctrine\ORM\EntityManager;
+use Laminas\EventManager\EventManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -26,18 +27,15 @@ class HomePageHandlerFactoryTest extends TestCase
 
     public function testFactoryWithoutTemplate(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
-        $entityManager = $this->createMock(EntityManager::class);
-
         $this->container
             ->expects($this->atMost(5))
             ->method('get')
             ->willReturnOnConsecutiveCalls(
-                $entityManager,
+                $this->createMock(EntityManager::class),
                 $this->createMock(EmailParserService::class),
                 $this->createMock(UserNoteService::class),
                 $this->createMock(TwilioService::class),
-                $logger
+                $this->createMock(EventManager::class)
             );
 
         $factory  = new HomePageHandlerFactory();

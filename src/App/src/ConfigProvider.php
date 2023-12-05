@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App;
 
+use App\Handler\HomePageHandler;
+use App\Handler\HomePageHandlerLoggerListenerFactory;
 use App\Repository\NoteRepository;
 use App\Repository\NoteRepositoryFactory;
 use App\Repository\UserRepository;
@@ -15,6 +17,7 @@ use App\Service\TwilioService;
 use App\Service\TwilioServiceFactory;
 use App\Service\UserNoteService;
 use App\Service\UserNoteServiceFactory;
+use Laminas\EventManager\EventManager;
 use Mezzio\Helper\ContentLengthMiddleware;
 use Psr\Log\LoggerInterface;
 use Twilio\Rest\Client;
@@ -46,9 +49,15 @@ class ConfigProvider
     public function getDependencies(): array
     {
         return [
+            'delegators' => [
+                HomePageHandler::class => [
+                    HomePageHandlerLoggerListenerFactory::class,
+                ],
+            ],
             'invokables' => [
                 ContentLengthMiddleware::class => ContentLengthMiddleware::class,
                 EmailParserService::class => EmailParserService::class,
+                EventManager::class => EventManager::class,
                 Handler\PingHandler::class => Handler\PingHandler::class,
             ],
             'factories'  => [
