@@ -26,6 +26,7 @@ To use the application, you need the following:
   - [tokenizer][ext-tokenizer]
   - [xml][ext-xml]
   - [xmlwriter][ext-xmlwriter]
+  - [The required extension](https://www.doctrine-project.org/projects/doctrine-dbal/en/3.7/reference/platforms.html) for your database of choice
 - [A Twilio Account](https://www.twilio.com/try-twilio) 
 - [A SendGrid account](https://signup.sendgrid.com/)
 - A domain that you can use, along with access to the DNS records
@@ -74,17 +75,25 @@ The application has two routes:
 
 To use the application, first, copy _.env.local_ as _.env_.
 Then, from the Twilio Console, set your Twilio Account SID, Auth Token, and phone number as the values for the three variables in _.env_.
-After that, [follow the instructions for setting up the Inbound Parse Webhook][inbound-parse-webhook-setup-docs].
+After that, [follow the Inbound Parse Webhook setup instructions][inbound-parse-webhook-setup-docs].
 
 When that's done, clone the code locally, install PHP's dependencies, and run the database migrations, by running the following commands.
 
 ```bash
 git clone git@github.com:settermjd/inbound-parser.git inbound-parser
+
 cd inbound-parser
+
 composer install \
-    --no-dev --no-ansi --no-plugins --no-progress --no-scripts \
-    --classmap-authoritative --no-interaction \
+    --classmap-authoritative \
+    --no-ansi \
+    --no-dev \
+    --no-interaction \
+    --no-plugins \
+    --no-progress \
+    --no-scripts \
     --quiet
+    
 composer mezzio doctrine:migrations:migrate
 ```
 
@@ -105,7 +114,7 @@ ENVIRONMENT=development composer serve
 ```
 
 Now, send an email to the email address that you configured with the Inbound Parse Webhook. 
-Shortly afterward, you should see a new record in  
+Shortly afterward, you should see a new record in the **note** and **attachment** tables in the database. 
 
 [email-parse-webhook-docs]: https://docs.sendgrid.com/for-developers/parsing-email/inbound-email 
 [inbound-parse-webhook-setup-docs]: https://docs.sendgrid.com/for-developers/parsing-email/setting-up-the-inbound-parse-webhook
